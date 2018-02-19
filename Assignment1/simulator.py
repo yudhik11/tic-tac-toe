@@ -111,13 +111,13 @@ class Board:
 
 		#checking if diamond has been won
 		if(bs[1][0] == bs[0][1] == bs[2][1] == bs[1][2]) and (bs[1][0] == 'x' or bs[1][0] == 'o'):
-			return (bs[0][0],'WON')
+			return (bs[1][0],'WON')
 		if(bs[1][1] == bs[0][2] == bs[2][2] == bs[1][3]) and (bs[1][1] == 'x' or bs[1][1] == 'o'):
-			return (bs[0][0],'WON')
+			return (bs[1][1],'WON')
 		if(bs[2][0] == bs[1][1] == bs[3][1] == bs[2][2]) and (bs[2][0] == 'x' or bs[2][0] == 'o'):
-			return (bs[0][0],'WON')
+			return (bs[2][0],'WON')
 		if(bs[2][1] == bs[1][2] == bs[3][2] == bs[2][3]) and (bs[2][1] == 'x' or bs[2][1] == 'o'):
-			return (bs[0][0],'WON')
+			return (bs[2][1],'WON')
 
 		if cntx+cnto+cntd <16:		#if all blocks have not yet been won, continue
 			return ('CONTINUE', '-')
