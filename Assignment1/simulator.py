@@ -3,6 +3,7 @@ import random
 import signal
 import time
 import copy
+import traceback
 
 TIME = 16
 MAX_PTS = 68
@@ -191,6 +192,7 @@ def player_turn(game_board, old_move, obj, ply, opp, flg):
 		MESSAGE = ''
 		pts = {"P1" : 0, "P2" : 0}
 		to_break = False
+		p_move = ''
 
 		try:									#try to get player 1's move			
 			p_move = obj.move(game_board, old_move, flg)
@@ -202,7 +204,8 @@ def player_turn(game_board, old_move, obj, ply, opp, flg):
 			return p_move, WINNER, MESSAGE, pts["P1"], pts["P2"], True, False
 		except Exception as e:
 			WINNER = opp
-			MESSAGE = 'INVALID MOVE'
+			MESSAGE = "THREW AN EXCEPTION"
+			traceback.print_exc()
 			pts[opp] = MAX_PTS			
 			return p_move, WINNER, MESSAGE, pts["P1"], pts["P2"], True, False
 		signal.alarm(0)
