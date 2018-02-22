@@ -132,9 +132,11 @@ class Player46:
         else:
             children = board_copy.find_valid_move_cells(root)
             nSiblings = len(children)
-
+        
         if depth == 0 or nSiblings == 0:
             answer = root
+            if self.check_time():
+                return 0, answer
             g = self.heuristic(root)
 
         # Node is a max node
@@ -142,7 +144,7 @@ class Player46:
             g = -self.INF
             answer = children[0]
             # Return value if time up
-            if datetime.datetime.utcnow() - self.begin > self.timeLimit:
+            if self.check_time():
                     return g, answer
 
             # Save original alpha value
@@ -182,9 +184,8 @@ class Player46:
             g = self.INF
             answer = children[0]
             # Return value if time up
-            if datetime.datetime.utcnow() - self.begin > self.timeLimit:
-                    return g, answer
-
+            if self.check_time():
+                return g, answer
             # Save original beta value
             b = beta
             i = 0
@@ -249,24 +250,24 @@ class Player46:
 
     def checkdiamond(self, currblockX, currblockY, flag, oflag, bs):
         scounter = 0
-        save = [(-1,-1), (1,-1), (0,-2)]
+        save = [ [1,-1], [1,1], [2,0]]
         if bs[currblockX][currblockY] is flag:
-            scounter+=1
+            scounter+=3
         elif bs[currblockX][currblockY] is oflag:
-            return (-1)
+            scounter -= 1
         if bs[currblockX+save[0][0]][currblockY+save[0][1]] is flag:
-            scounter+=1
+            scounter+=3
         elif bs[currblockX+save[0][0]][currblockY+save[0][1]] is oflag:
-            return (-1)
-        if bs[currblockX+save[1][0]][currblockY-save[1][1]] is flag:
-            scounter+=1
+            scounter -= 1
+        if bs[currblockX+save[1][0]][currblockY+save[1][1]] is flag:
+            scounter+=3
         elif bs[currblockX+save[1][0]][currblockY+save[1][1]] is oflag:
-            return (-1)
+            scounter -= 1
         if bs[currblockX+save[2][0]][currblockY+save[2][1]]  is flag:
-            scounter = scounter + 1
+            scounter+=3 
         elif bs[currblockX+save[2][0]][currblockY+save[2][1]] is oflag:
-            return (-1)
-        return scounter
+            scounter -= 1
+        return scounter+4
 
 
     def is_centre(self, row, col):
@@ -294,11 +295,10 @@ class Player46:
     def check_current_board_state(self, bs, flag, oflag):
         h = 0
         dtops = [(0,1), (0,2), (1,1), (1,2)]
+        arr_diamond = [-1000, -700, -400, -200, 0 ,20, 60, 120, 200, 300, 420, 560,720, 900 ,1000]
         for cell in dtops:
-            scounter = 0
             val = self.checkdiamond(cell[0],cell[1],flag,oflag,bs)
-            if val is not (-1):
-                h+=100*scounter
+            h+=arr_diamond[val]
 
         for i in range(4):
             scounter_row = 0
@@ -316,18 +316,27 @@ class Player46:
                 elif bs[j][i] == oflag:
                     ocounter_column+=1
 
-                if ocounter_row == 0:
-                    h+=scounter_row*100
-                if ocounter_column == 0:
-                    h+=scounter_column*100
+            if ocounter_row == 0:
+                h+=scounter_row*200
+            if ocounter_column == 0:
+                h+=scounter_column*200
+            if scounter_row == 0:
+                h-=ocounter_row*50
+            if scounter_column == 0:
+                h-=ocounter_column*50
+            
         return h
 
     def heuristic(self, move):
 
         currblockX = move[0]/4
         currblockY = move[1]/4
+        nextblockX = move[0]%4
+        nextblockY = move[1]%4
+
         bs = board_copy.block_status
         BS = board_copy.board_status
+        
         flag = self.mark
         if flag == 'x':
             oflag = 'o'
@@ -353,9 +362,9 @@ class Player46:
             pts2=0
             for i in range(4):
                 for j in range(4):
-                    if game_board.block_status[i][j] == 'x':
+                    if game_board.block_status[i][j] == flag:
                         pts1 += val[i][j]
-                    if game_board.block_status[i][j] == 'o':
+                    if game_board.block_status[i][j] == oflag:
                         pts2 += val[i][j]
             heur+=(pts1-pts2)*20
         else:
@@ -375,7 +384,6 @@ class Player46:
         heur+=(self.check_current_board_state(bs, flag, oflag)-self.depth*10)
         heur-=(self.check_current_board_state(bs, oflag, flag)-self.depth*10)
         return heur
-
 
 
 
