@@ -246,4 +246,4 @@ class Player46:
 		return g, answer
 
 	def heuristic(self, move):
-		return 1
+		return random.randint(0,50)
