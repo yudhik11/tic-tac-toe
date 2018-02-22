@@ -1,4 +1,3 @@
-import sys
 import random
 import datetime
 import copy
@@ -7,7 +6,7 @@ class Player46:
     def __init__(self):
         self.INF = int(1e9)
         self.maxmove = False
-        self.timeLimit = datetime.timedelta(seconds = 15.5)
+        self.timeLimit = datetime.timedelta(seconds = 0.8)
         self.begin = 0
         self.mark = 'x'
         self.zobrist= []
@@ -46,10 +45,11 @@ class Player46:
 
     def IDS(self, root):
         guess = 0
-        for depth in range(1, 500):
+        for depth in range(1, 256):
             self.depth = depth
             self.transpositionTable = {}
             guess, move = self.MTDF(root, guess, depth)
+            print(self.depth)
             if self.check_time():
                 break
             saved_move = move
@@ -89,6 +89,11 @@ class Player46:
     def cantorPairing(self, a, b):
         return (a + b)*(a + b + 1)/2 + b
 
+    def getMarker(self, flag):
+        if flag == 'x':
+            return 'o'
+        return 'x'
+
     def AlphaBetaWithMemory(self, root, alpha, beta, depth):
         board_hash = self.calcZobristHash(root)
         loweridx = self.cantorPairing(board_hash, 1)
@@ -110,7 +115,7 @@ class Player46:
 
         status = board_copy.find_terminal_state()
         if status[1] == "WON":
-            if self.myMove:
+            if self.maxmove:
                 return -self.INF, root
             else:
                 return self.INF, root
@@ -132,7 +137,7 @@ class Player46:
         else:
             children = board_copy.find_valid_move_cells(root)
             nSiblings = len(children)
-        
+
         if depth == 0 or nSiblings == 0:
             answer = root
             if self.check_time():
@@ -151,7 +156,7 @@ class Player46:
             a = alpha
             i = 0
             while ((g < beta) and (i < nSiblings)):
-                self.myMove = False
+                self.maxmove = False
                 c = children[i]
 
                 #Retain current block state for later restoration
@@ -177,7 +182,7 @@ class Player46:
 
                 a = max(a, g)
                 i = i + 1
-            self.myMove = True
+            self.maxmove = True
 
         # Node is a min node
         else:
@@ -190,7 +195,7 @@ class Player46:
             b = beta
             i = 0
             while ((g > alpha) and (i < nSiblings)):
-                self.myMove = True
+                self.maxmove = True
                 c = children[i]
                 # Retain current block state for later restoration
                 blockVal = board_copy.block_status[c[0]/4][c[1]/4]
@@ -215,11 +220,11 @@ class Player46:
 
                 b = min(b, g)
                 i = i + 1
-            self.myMove = False
+            self.maxmove = False
 
         temp = []
 
-        if self.myMove:
+        if self.maxmove:
             moveInfo = sorted(moveInfo, reverse = True)
         else:
             moveInfo = sorted(moveInfo)
@@ -296,6 +301,7 @@ class Player46:
         h = 0
         dtops = [(0,1), (0,2), (1,1), (1,2)]
         arr_diamond = [-1000, -700, -400, -200, 0 ,20, 60, 120, 200, 300, 420, 560,720, 900 ,1000]
+        arr = [0, 120, 220, 450]
         for cell in dtops:
             val = self.checkdiamond(cell[0],cell[1],flag,oflag,bs)
             h+=arr_diamond[val]
@@ -315,17 +321,51 @@ class Player46:
                     scounter_column+=1
                 elif bs[j][i] == oflag:
                     ocounter_column+=1
-
             if ocounter_row == 0:
-                h+=scounter_row*200
+                h+=arr[scounter_row]
             if ocounter_column == 0:
-                h+=scounter_column*200
+                h+=arr[scounter_column]
             if scounter_row == 0:
-                h-=ocounter_row*50
+                h-=arr[ocounter_row]*1.25
             if scounter_column == 0:
-                h-=ocounter_column*50
+                h-=arr[ocounter_column]*1.25
             
         return h
+    def check_oppwin(self, nextblockX, nextblockY, oflag, flag):
+        poss = 0
+        board_status = board_copy.board_status
+        for i in range(0,4):
+            nuts = 0 
+            for j in range(0,4):
+                if (board_status[i+4*nextblockX][j+4*nextblockY] == oflag):
+                    nuts+=1
+                elif (board_status[i+4*nextblockX][j+4*nextblockY] == flag):
+                    nuts-=1
+            if nuts == 3:
+                poss +=1
+
+        for i in range(0,4):
+            nuts = 0 
+            for j in range(0,4):
+                if (board_status[j+4*nextblockX][i+4*nextblockY] == oflag):
+                    nuts+=1
+                elif (board_status[j+4*nextblockX][i+4*nextblockY] == flag):
+                    nuts-=1
+            if nuts == 3:
+                poss +=1
+        for i in range(0,2):
+            for j in range(0,2):
+                diam =  board_status[4*nextblockX+i][4*nextblockY+j+1] == oflag + \
+                        board_status[4*nextblockX+i+1][4*nextblockY+j] == oflag + \
+                        board_status[4*nextblockX+i+1][4*nextblockY+j+2] == oflag + \
+                        board_status[4*nextblockX+i+2][4*nextblockY+j+1] == oflag - \
+                        board_status[4*nextblockX+i][4*nextblockY+j+1] == flag - \
+                        board_status[4*nextblockX+i+1][4*nextblockY+j] == flag - \
+                        board_status[4*nextblockX+i+1][4*nextblockY+j+2] == flag - \
+                        board_status[4*nextblockX+i+2][4*nextblockY+j+1] == flag
+                if (diam ==3 ):
+                    poss+=1
+        return poss
 
     def heuristic(self, move):
 
@@ -336,13 +376,29 @@ class Player46:
 
         bs = board_copy.block_status
         BS = board_copy.board_status
+        immwin = [500, -5000, -5100, -5200, -5300]
         
+        # if self.depth == 1 and :
+
         flag = self.mark
         if flag == 'x':
             oflag = 'o'
         else:
             oflag = 'x'
         heur = 0
+        if bs[nextblockX][nextblockY] != '-':
+            if self.maxmove:
+                heur-=500/self.depth
+            else:
+                heur+=500/self.depth
+        elif self.depth < 3:
+            ret  = self.check_oppwin(nextblockX,nextblockY,oflag,flag)
+            if ret > len(immwin):
+                heur -= 5500
+            else:
+                heur += immwin[ret]
+
+
         a, b = board_copy.find_terminal_state()
         val = [[],[],[],[]]
         for i in range(4):
@@ -379,10 +435,10 @@ class Player46:
                         heur+=self.check_current_board_state(send, flag, oflag)/10
                         heur-=self.check_current_board_state(send, oflag, flag)/10
 
+            heur+=(self.check_current_board_state(bs, flag, oflag)-self.depth*10)
+            heur-=(self.check_current_board_state(bs, oflag, flag)-self.depth*10)
 
 
-        heur+=(self.check_current_board_state(bs, flag, oflag)-self.depth*10)
-        heur-=(self.check_current_board_state(bs, oflag, flag)-self.depth*10)
         return heur
 
 
