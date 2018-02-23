@@ -2,11 +2,11 @@ import random
 import datetime
 import copy
 
-class Player46:
+class Player5:
     def __init__(self):
         self.INF = int(1e9)
         self.maxmove = False
-        self.timeLimit = datetime.timedelta(seconds = 2)
+        self.timeLimit = datetime.timedelta(seconds = 0.8)
         self.begin = 0
         self.mark = 'x'
         self.zobrist= []
@@ -430,9 +430,9 @@ class Player46:
             pts2=0
             for i in range(4):
                 for j in range(4):
-                    if board_copy.block_status[i][j] == flag:
+                    if game_board.block_status[i][j] == flag:
                         pts1 += val[i][j]
-                    if board_copy.block_status[i][j] == oflag:
+                    if game_board.block_status[i][j] == oflag:
                         pts2 += val[i][j]
             heur+=(pts1-pts2)*20
         else:
