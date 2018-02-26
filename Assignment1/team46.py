@@ -2,28 +2,32 @@ import random
 import datetime
 import copy
 
-class Player46:
+class Team46:
     def __init__(self):
         self.INF = int(1e9)
         self.maxmove = False
         self.timeLimit = datetime.timedelta(seconds = 2)
         self.begin = 0
         self.mark = 'x'
-        self.zobrist= []
         self.transpositionTable = {}
         self.index = 0
         self.moveOrder = dict()
         self.depth = 0
-        for i in range(0, 16):
-            self.zobrist.append([])
-            for j in range(0, 16):
-                self.zobrist[i].append([])
-                for k in range(0, 17):
-                    self.zobrist[i][j].append([])
-                    for l in range(0, 17):
-                        self.zobrist[i][j][k].append([])
-                        for m in range(0, 2):
-                            self.zobrist[i][j][k][l].append(random.randint(0, 2**64))
+        self.val = [[],[],[],[]]
+        self.fac = [[],[],[],[]]
+        for i in range(4):
+            for j in range(4):
+                self.val[i].append(4)
+                self.fac[i].append(3)
+                if self.is_corner(i,j):
+                    self.val[i][j] = 6
+                    self.fac[i][j] = 2
+                elif self.is_centre(i,j):
+                    self.val[i][j] = 3
+                    self.fac[i][j] = 4
+        
+        self.zobrist = [ [ [ [ [ random.randint(0, 2**64) , random.randint(0, 2**64) ] \
+		 for i in range(17) ] for j in range(17)] for k in range(16)] for l in range(16)]
 
     def move(self, board, old_move, flag):
         self.mark = flag
@@ -32,11 +36,8 @@ class Player46:
         curr = copy.deepcopy(old_move)
         self.begin = datetime.datetime.utcnow()
         ans = self.IDS(curr)
+        print "final move: " , ans
         return ans
-    
-    def revertBoard(self, root, blockVal):
-        board_copy.board_status[root[0]][root[1]] = '-'
-        board_copy.block_status[root[0]/4][root[1]/4] = blockVal
 
     def check_time(self):
         if datetime.datetime.utcnow() - self.begin > self.timeLimit:
@@ -45,7 +46,7 @@ class Player46:
 
     def IDS(self, root):
         guess = 0
-        for depth in range(1, 256):
+        for depth in range(1, 7):
             self.depth = depth
             self.transpositionTable = {}
             guess, move = self.MTDF(root, guess, depth)
@@ -142,7 +143,7 @@ class Player46:
             answer = root
             if self.check_time():
                 return 0, answer
-            g = self.heuristic(root)
+            g = self.heuristic(root, 0)
 
         # Node is a max node
         elif self.maxmove:
@@ -169,7 +170,8 @@ class Player46:
                 val, temp = self.AlphaBetaWithMemory(c, a, beta, depth-1)
 
                 # Revert Board state
-                self.revertBoard(c, blockVal)
+                board_copy.board_status[c[0]][c[1]] = '-'
+                board_copy.block_status[c[0]/4][c[1]/4] = blockVal
                 self.index -= 1
 
                 # Append returned values to moveInfo
@@ -207,7 +209,8 @@ class Player46:
                 val, temp = self.AlphaBetaWithMemory(c, alpha, b, depth-1)
 
                 # Revert Board state
-                self.revertBoard(c, blockVal)
+                board_copy.board_status[c[0]][c[1]] = '-'
+                board_copy.block_status[c[0]/4][c[1]/4] = blockVal
                 self.index -= 1
 
                 # Append returned values to moveInfo
@@ -255,64 +258,45 @@ class Player46:
 
     def checkdiamond(self, currblockX, currblockY, flag, oflag, bs):
         scounter = 0
-        save = [ [1,-1], [1,1], [2,0]]
-        if bs[currblockX][currblockY] is flag:
-            scounter+=3
-        elif bs[currblockX][currblockY] is oflag:
-            scounter -= 1
-        if bs[currblockX+save[0][0]][currblockY+save[0][1]] is flag:
-            scounter+=3
-        elif bs[currblockX+save[0][0]][currblockY+save[0][1]] is oflag:
-            scounter -= 1
-        if bs[currblockX+save[1][0]][currblockY+save[1][1]] is flag:
-            scounter+=3
-        elif bs[currblockX+save[1][0]][currblockY+save[1][1]] is oflag:
-            scounter -= 1
-        if bs[currblockX+save[2][0]][currblockY+save[2][1]]  is flag:
-            scounter+=3 
-        elif bs[currblockX+save[2][0]][currblockY+save[2][1]] is oflag:
-            scounter -= 1
-        return scounter+4
-
+        ocounter = 0
+        save = [ [0, 0], [1,-1], [1,1], [2,0]]
+        for cell in save:
+            if bs[currblockX + cell[0] ][currblockY + cell[1]] is flag:
+                scounter += 1
+            elif bs[currblockX + cell[0] ][currblockY + cell[1] ] is oflag:
+                ocounter += 1
+        if not ocounter:
+            return scounter
+        return -1
 
     def is_centre(self, row, col):
-        if row == 1 and col == 1:
-            return 1
-        if row == 1 and col == 2:
-            return 1
-        if row == 2 and col == 1:
-            return 1
-        if row == 2 and col == 2:
+        if row in (1,2) and col in (1,2):
             return 1
         return 0
 
     def is_corner(self, row, col):
-        if row == 0 and col == 0:
-            return 1
-        if row == 0 and col == 3:
-            return 1
-        if row == 3 and col == 0:
-            return 1
-        if row == 3 and col == 3:
+        if row in (0,3) and col in (0,3):
             return 1
         return 0
 
     def check_current_board_state(self, segment, flag, oflag):
-        h = 0
+        lheur = 0
         req_diamond = [(0,1), (0,2), (1,1), (1,2)]
-        arr_diamond = [-1000, -700, -400, -200, 0 ,20, 60, 120, 200, 300, 420, 560,720, 900 ,1000]
-        arr = [0, 120, 220, 450]
-        flag_diamind = 1
+        val_arr = [ 50, 100, 225, 400]
+        flag_diamond = 1
         if (segment[1][1] == segment[1][2] == oflag or \
             segment[1][1] == segment[2][1] == oflag or \
             segment[2][2] == segment[1][2] == oflag or \
             segment[2][2] == segment[2][1] == oflag):
-            flag_diamind == 3
+            flag_diamond = 1.5
 
-        if flag_diamind ==1:
+        if flag_diamond == 1:
             for cell in req_diamond:
                 val = self.checkdiamond(cell[0],cell[1],flag,oflag,segment)
-                h+=arr_diamond[val]
+                if val == -1:
+                    lheur -= 50
+                else :
+                    lheur += val_arr[val]
 
         for i in range(4):
             scounter_row = 0
@@ -330,18 +314,18 @@ class Player46:
                 elif segment[j][i] == oflag:
                     ocounter_column+=1
             if ocounter_row == 0:
-                h += flag_diamind * arr[scounter_row]
+                lheur += flag_diamond * val_arr[scounter_row]
 
             if ocounter_column == 0:
-                h += flag_diamind * arr[scounter_column]
+                lheur += flag_diamond * val_arr[scounter_column]
 
             if scounter_row == 0:
-                h -= flag_diamind * arr[ocounter_row]*1.25
+                lheur -= flag_diamond * val_arr[ocounter_row]
 
             if scounter_column == 0:
-                h -= flag_diamind * arr[ocounter_column]*1.25
+                lheur -= flag_diamond * val_arr[ocounter_column]
 
-        return h
+        return lheur
 
     def check_oppwin(self, nextblockX, nextblockY, oflag, flag):
         poss = 0
@@ -365,6 +349,7 @@ class Player46:
                     nuts-=1
             if nuts == 3:
                 poss +=1
+        
         for i in range(0,2):
             for j in range(0,2):
                 diam =  board_status[4*nextblockX+i][4*nextblockY+j+1] == oflag + \
@@ -379,77 +364,78 @@ class Player46:
                     poss+=1
         return poss
 
-    def heuristic(self, move):
+    def heuristic(self, move, bonusmove):
 
         currblockX = move[0]/4
         currblockY = move[1]/4
         nextblockX = move[0]%4
         nextblockY = move[1]%4
-
         bs = board_copy.block_status
         BS = board_copy.board_status
-        immwin = [500, -5000, -5100, -5200, -5300]
-        
-        # if self.depth == 1 and :
-
+        immwin = [500, -1000, -1200, -1300]
         flag = self.mark
         if flag == 'x':
             oflag = 'o'
         else:
             oflag = 'x'
+
         heur = 0
+
+        if self.depth == 1 and not bonusmove and bs[currblockX][currblockY] == flag:
+            children = board_copy.find_valid_move_cells((move[0], move[1]))
+            for child in children:
+                board_copy.update(move, child, flag)
+                heur = 10000 + self.heuristic(child, 1)
+                board_copy.board_status[child[0]][child[1]] = '-'
+                board_copy.block_status[child[0]/4][child[1]/4] = blockVal
+
+
+        # if self.depth == 1 and bs[currblockX][currblockY] == flag :
+
         if bs[nextblockX][nextblockY] != '-':
             if self.maxmove:
-                heur-=500/self.depth
+                heur += 1200/self.depth
             else:
-                heur+=500/self.depth
-        elif self.depth < 3:
+                heur -= 1200/self.depth
+
+        if self.depth < 2:
             ret  = self.check_oppwin(nextblockX,nextblockY,oflag,flag)
             if ret > len(immwin):
-                heur -= 5500
+                heur -= 1500
             else:
                 heur += immwin[ret]
 
 
         a, b = board_copy.find_terminal_state()
-        val = [[],[],[],[]]
-        for i in range(4):
-            for j in range(4):
-                val[i].append(4)
-                if self.is_corner(i,j):
-                    val[i][j] = 6
-                elif self.is_centre(i,j):
-                    val[i][j] = 3
         if b == "WON":
             if a==flag:
-                heur+=10000
+                heur += 100000
             elif a==oflag:
-                heur-=10000
+                heur -= 100000
         elif b == "DRAW":
             pts1=0
             pts2=0
             for i in range(4):
                 for j in range(4):
                     if board_copy.block_status[i][j] == flag:
-                        pts1 += val[i][j]
+                        pts1 += self.val[i][j]
                     if board_copy.block_status[i][j] == oflag:
-                        pts2 += val[i][j]
+                        pts2 += self.val[i][j]
             heur+=(pts1-pts2)*20
         else:
             for i in range(4):
                 for j in range(4):
                     if bs[i][j] == flag:
-                        heur+=val[i][j]*50
+                        heur += self.val[i][j] *  120
                     elif bs[i][j] == oflag:
-                        heur-=val[i][j]*50
+                        heur -= self.val[i][j] * 120
                     else:
-                        temp = [[BS[4*i+k][4*j+l] for l in range(4)] for k in range(4)]
-                        heur+=self.check_current_board_state(temp, flag, oflag)/10
-                        heur-=self.check_current_board_state(temp, oflag, flag)/10
+                        temp = [ [BS[4*i+k][4*j+l] for l in range(4)] for k in range(4)]
+                        heur += self.check_current_board_state(temp, flag, oflag) * self.fac[i][j] /6
+                        heur -= self.check_current_board_state(temp, oflag, flag) * self.fac[i][j] /6
 
-            heur+=(self.check_current_board_state(bs, flag, oflag)-self.depth*10)
-            heur-=(self.check_current_board_state(bs, oflag, flag)-self.depth*10)
-
+            heur += self.check_current_board_state(bs, flag, oflag) * 4 
+            heur -= self.check_current_board_state(bs, oflag, flag) * 4
 
         return heur
 
