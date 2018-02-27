@@ -59,8 +59,8 @@ class Team46:
             # print(self.depth)
             if self.check_time() :
                 break
-            # if guess > 100000000:
-            #     return move
+            if guess > 100000000:
+                return move
             saved_move = move
         return saved_move
 
@@ -314,8 +314,8 @@ class Team46:
         lheur = 0
         req_diamond = [(0,1), (0,2), (1,1), (1,2)]
         if flag is self.mark:
-            val_arr = [ 0, 100, 325, 500]
-            val_arr_diamond = [ 0, 100, 350, 700]
+            val_arr = [ 0, 50, 325, 600]
+            val_arr_diamond = [ 0, 50, 350, 700]
         else:
             val_arr = [0, 50, 200, 600]
             val_arr_diamond = [ 0, 50, 250, 600]
@@ -351,10 +351,10 @@ class Team46:
                 elif segment[j][i] == oflag:
                     ocounter_column+=1
             if ocounter_row == 0:
-                lheur += val_arr[scounter_row]
+                lheur += flag_diamond * val_arr[scounter_row]
 
             if ocounter_column == 0:
-                lheur += val_arr[scounter_column]
+                lheur += flag_diamond * val_arr[scounter_column]
 
         return lheur
 
@@ -412,14 +412,15 @@ class Team46:
 
         heur = 0
 
-        # if self.depth == 1 and not bonusmove and bs[currblockX][currblockY] == flag:
-        #     children = board_copy.find_valid_move_cells((move[0], move[1]))
-        #     for child in children:
-        #         blockVal = board_copy.block_status[child[0]/4][child[1]/4]
-        #         board_copy.update(move, child, flag)
-        #         heur = 1000000000 + self.heuristic(child, 1)
-        #         board_copy.board_status[child[0]][child[1]] = '-'
-        #         board_copy.block_status[child[0]/4][child[1]/4] = blockVal
+        if self.depth == 1 and not bonusmove and bs[currblockX][currblockY] == flag:
+            children = board_copy.find_valid_move_cells((move[0], move[1]))
+            for child in children:
+                blockVal = board_copy.block_status[child[0]/4][child[1]/4]
+                board_copy.update(move, child, flag)
+                heur = 1000000000 + self.heuristic(child, 1)
+                board_copy.board_status[child[0]][child[1]] = '-'
+                board_copy.block_status[child[0]/4][child[1]/4] = blockVal
+            return heur
 
 
         # if self.depth == 1 and bs[currblockX][currblockY] == flag :
@@ -428,7 +429,7 @@ class Team46:
             if maxmove:
                 heur += 1500/self.depth
             else:
-                heur -= 2000/self.depth
+                heur -= 1500/self.depth
 
         if self.depth < 2:
             ret  = self.check_oppwin(nextblockX,nextblockY,oflag,flag)
@@ -464,13 +465,11 @@ class Team46:
                     else:
                         temp = [ [BS[4*i+k][4*j+l] for l in range(4)] for k in range(4)]
                         scale = 1
-                        if store[i*4+j] != temp:
-                            scale = 1.5
-                        heur += self.check_current_board_state(temp, flag, oflag) * self.fac[i][j]/(2 * self.depth)
-                        heur -= self.check_current_board_state(temp, oflag, flag) * self.fac[i][j]/(2 * self.depth)
+                        heur += self.check_current_board_state(temp, flag, oflag) * self.fac[i][j] /(2 * self.depth)
+                        heur -= self.check_current_board_state(temp, oflag, flag) * self.fac[i][j] /(2 * self.depth)
 
-            heur += self.check_current_board_state(bs, flag, oflag) 
-            heur -= self.check_current_board_state(bs, oflag, flag) 
+            heur += self.check_current_board_state(bs, flag, oflag) * 7 / self.depth
+            heur -= self.check_current_board_state(bs, oflag, flag) * 7 / self.depth
         return heur
 
 
