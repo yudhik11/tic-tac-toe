@@ -4,8 +4,9 @@ import copy
 
 class Team46:
     def __init__(self):
+    	''' initialise variables'''
         self.INF = int(1e9)
-        self.timeLimit = datetime.timedelta(seconds = 15)
+        self.timeLimit = datetime.timedelta(seconds = 1)
         self.begin = 0
         self.mark = 'x'
         self.idx = 0
@@ -27,6 +28,7 @@ class Team46:
 		#  for i in range(17) ] for j in range(17)] for k in range(16)] for l in range(16)]
 
     def move(self, board, old_move, flag):
+    	''' start move '''
         self.mark = flag
         global board_copy
         board_copy = copy.deepcopy(board)
@@ -38,11 +40,13 @@ class Team46:
         return ans
 
     def check_time(self):
+    	''' check for timeout error '''
         if datetime.datetime.utcnow() - self.begin > self.timeLimit:
             return True
         return False
 
     def IDS(self, root):
+    	''' Iterative deepeninng search'''
         guess = 0
         for depth in range(1, 8):
             self.depth = depth
@@ -57,7 +61,7 @@ class Team46:
         return saved_move
 
     def alpha_beta(self, maxmove, root, alpha, beta, depth, bonusmove):
-
+    	''' minimax alpha_beta'''
         status = board_copy.find_terminal_state()
         if status[1] == "WON":
             if status[0] == self.mark:
@@ -159,6 +163,7 @@ class Team46:
         return g, answer
 
     def checkdiamond(self, currblockX, currblockY, flag, oflag, bs):
+    	''' checking if diamond is forming based on top cell of diamond'''
         scounter = 0
         ocounter = 0
         save = [ [0, 0], [1,-1], [1,1], [2,0]]
@@ -172,16 +177,19 @@ class Team46:
         return -1
 
     def is_centre(self, row, col):
+    	''' checking for centre cell'''
         if row in (1,2) and col in (1,2):
             return 1
         return 0
 
     def is_corner(self, row, col):
+    	''' checking for corner cell'''
         if row in (0,3) and col in (0,3):
             return 1
         return 0
 
     def check_current_board_state(self, segment, flag, oflag):
+    	''' calculating heuristic based on current board state'''
         lheur = 0
         req_diamond = [(0,1), (0,2), (1,1), (1,2)]
         if flag is self.mark:
@@ -192,6 +200,7 @@ class Team46:
             val_arr_diamond = [ 0, 50, 260, 600]
             
         flag_diamond = 1
+        # check if any diamond will be possible
         if (segment[1][1] == segment[1][2] == oflag or \
             segment[1][1] == segment[2][1] == oflag or \
             segment[2][2] == segment[1][2] == oflag or \
@@ -206,6 +215,7 @@ class Team46:
                 else :
                     lheur += val_arr_diamond[val]
 
+        # heuristic evaluation for rows and columns
         for i in range(4):
             scounter_row = 0
             ocounter_row = 0
@@ -230,6 +240,7 @@ class Team46:
         return lheur
 
     def check_oppwin(self, nextblockX, nextblockY, oflag, flag):
+    	''' checking if opposition wins and eliminating it'''
         poss = 0
         board_status = board_copy.board_status
         for i in range(0,4):
@@ -267,7 +278,7 @@ class Team46:
         return poss
 
     def heuristic(self, maxmove, move, bonusmove):
-
+    	''' calculating heuristic value'''
         currblockX = move[0]/4
         currblockY = move[1]/4
         nextblockX = move[0]%4
