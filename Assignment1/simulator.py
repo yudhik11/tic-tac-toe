@@ -7,8 +7,11 @@ import traceback
 
 TIME = 16
 MAX_PTS = 68
-from team46 import Player46
-from team5 import Player5
+from team46 import Team46
+from lol import Team50
+from mohit import Player11
+from team5 import Team5
+from team47 import Team47
 class TimedOutExc(Exception):
 	pass
 
@@ -356,10 +359,10 @@ if __name__ == '__main__':
 	obj2 = ''
 	option = sys.argv[1]	
 	if option == '0':
-		obj2 = Player5()
-		obj1 = Player46()
+		obj2 = Player11()
+		obj1 = Team46()
 	elif option == '1':
-		obj1 = Player46()
+		obj1 = Team46()
 		obj2 = Random_Player()
 
 	elif option == '2':

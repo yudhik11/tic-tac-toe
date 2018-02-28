@@ -6,7 +6,7 @@ class Team46:
     def __init__(self):
     	''' initialise variables'''
         self.INF = int(1e9)
-        self.timeLimit = datetime.timedelta(seconds = 1)
+        self.timeLimit = datetime.timedelta(seconds = 15)
         self.begin = 0
         self.mark = 'x'
         self.idx = 0
@@ -36,7 +36,7 @@ class Team46:
         curr = copy.deepcopy(old_move)
         self.begin = datetime.datetime.utcnow()
         ans = self.IDS(curr)
-        print "final move: " , ans
+        # print "final move: " , ans
         return ans
 
     def check_time(self):
@@ -321,9 +321,9 @@ class Team46:
         a, b = board_copy.find_terminal_state()
         if b == "WON":
             if a==flag:
-                heur += 100000000
+                heur += 1000000000
             elif a==oflag:
-                heur -= 100000000
+                heur -= 1000000000
         elif b == "DRAW":
             pts1=0
             pts2=0
