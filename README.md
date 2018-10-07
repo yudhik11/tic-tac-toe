@@ -7,7 +7,8 @@
 - Player 1 marks ‘x’ and Player 2 marks ‘o’ on the board.
 - The player who makes a legitimate pattern wins the whole board.
 
-## Rules
+## **Rules**
+
 
 - **FIRST MOVE**:  The first player takes the first move  and it is a free move. The player is free to move anywhere i.e. in any  cell of any SmallBoard.
 - **CORRESPONDENCE RULE**:  When a player places his  marker inany of the cell, the next player can only place marker in a  SmallBoard corresponding to that cell. For Example: If a player places  his marker in Top Right Corner cell of a SmallBoard then the next player  canonly place his marker in available cells of the Top Right Corner  SmallBoard.
