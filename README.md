@@ -9,6 +9,7 @@
 
 ## **Rules**
 
+
 - **FIRST MOVE**:  The first player takes the first move  and it is a free move. The player is free to move anywhere i.e. in any  cell of any SmallBoard.
 - **CORRESPONDENCE RULE**:  When a player places his  marker inany of the cell, the next player can only place marker in a  SmallBoard corresponding to that cell. For Example: If a player places  his marker in Top Right Corner cell of a SmallBoard then the next player  canonly place his marker in available cells of the Top Right Corner  SmallBoard.
 - **ABANDON RULE**:  Once a SmallBoard is won by some  player, that SmallBoard is abandoned and it has to be considered full,  i.e. no more markers can be placed in that SmallBoard.
